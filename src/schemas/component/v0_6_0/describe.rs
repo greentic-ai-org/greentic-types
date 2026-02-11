@@ -7,6 +7,12 @@ use serde::{Deserialize, Serialize};
 use ciborium::value::Value;
 
 use crate::i18n_text::I18nText;
+use crate::schemas::common::schema_ir::SchemaIr;
+
+#[cfg(all(feature = "std", feature = "serde"))]
+use crate::cbor::canonical;
+#[cfg(all(feature = "std", feature = "serde"))]
+use sha2::{Digest, Sha256};
 
 /// Component metadata.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -34,20 +40,100 @@ pub struct ComponentDescribe {
     pub required_capabilities: Vec<String>,
     /// Optional metadata payload.
     pub metadata: BTreeMap<String, Value>,
+    /// MCP-equivalent tool list.
+    pub operations: Vec<ComponentOperation>,
+    /// Component-level config schema (authoritative).
+    pub config_schema: SchemaIr,
 }
 
-/// Placeholder run input schema.
+/// Component operation entry.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct ComponentOperation {
+    /// Operation identifier (e.g. "run").
+    pub id: String,
+    /// Optional display name.
+    pub display_name: Option<I18nText>,
+    /// Input schema.
+    pub input: ComponentRunInput,
+    /// Output schema.
+    pub output: ComponentRunOutput,
+    /// Default values.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub defaults: BTreeMap<String, Value>,
+    /// Redaction rules.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub redactions: Vec<RedactionRule>,
+    /// Validation constraints.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub constraints: BTreeMap<String, Value>,
+    /// Stable hash computed from typed SchemaIR values.
+    pub schema_hash: String,
+}
+
+/// Run input schema wrapper.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ComponentRunInput {
-    /// Input values keyed by name.
-    pub values: BTreeMap<String, Value>,
+    /// Input schema.
+    pub schema: SchemaIr,
 }
 
-/// Placeholder run output schema.
+/// Run output schema wrapper.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ComponentRunOutput {
-    /// Output values keyed by name.
-    pub values: BTreeMap<String, Value>,
+    /// Output schema.
+    pub schema: SchemaIr,
+}
+
+/// Redaction rule.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RedactionRule {
+    /// JSON Pointer path (e.g. "/api_key").
+    pub json_pointer: String,
+    /// Redaction kind.
+    pub kind: RedactionKind,
+}
+
+/// Redaction kind.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+pub enum RedactionKind {
+    /// Never display; treat as secret material.
+    Secret,
+    /// Display masked.
+    Mask,
+    /// Remove field from output/logs.
+    Drop,
+}
+
+/// Compute the schema hash for an operation, including config schema.
+#[cfg(all(feature = "std", feature = "serde"))]
+pub fn schema_hash(
+    input: &SchemaIr,
+    output: &SchemaIr,
+    config: &SchemaIr,
+) -> canonical::Result<String> {
+    #[derive(Serialize)]
+    struct HashMaterial<'a> {
+        input: &'a SchemaIr,
+        output: &'a SchemaIr,
+        config: &'a SchemaIr,
+    }
+
+    let material = HashMaterial {
+        input,
+        output,
+        config,
+    };
+    let bytes = canonical::to_canonical_cbor_allow_floats(&material)?;
+    let digest = Sha256::digest(bytes.as_slice());
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        hex.push_str(&format!("{byte:02x}"));
+    }
+    Ok(hex)
 }

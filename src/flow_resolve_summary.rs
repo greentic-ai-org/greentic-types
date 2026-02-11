@@ -174,25 +174,25 @@ pub fn validate_flow_resolve_summary(doc: &FlowResolveSummaryV1) -> GResult<()> 
     }
 
     for (node_name, node) in &doc.nodes {
-        if let FlowResolveSummarySourceRefV1::Local { path } = &node.source {
-            if Path::new(path).is_absolute() {
-                return Err(GreenticError::new(
-                    ErrorCode::InvalidInput,
-                    format!(
-                        "local component path for node '{}' must be relative",
-                        node_name
-                    ),
-                ));
-            }
+        if let FlowResolveSummarySourceRefV1::Local { path } = &node.source
+            && Path::new(path).is_absolute()
+        {
+            return Err(GreenticError::new(
+                ErrorCode::InvalidInput,
+                format!(
+                    "local component path for node '{}' must be relative",
+                    node_name
+                ),
+            ));
         }
         validate_digest(&node.digest)?;
-        if let Some(metadata) = &node.manifest {
-            if metadata.world.trim().is_empty() {
-                return Err(GreenticError::new(
-                    ErrorCode::InvalidInput,
-                    format!("manifest world for node '{}' must not be empty", node_name),
-                ));
-            }
+        if let Some(metadata) = &node.manifest
+            && metadata.world.trim().is_empty()
+        {
+            return Err(GreenticError::new(
+                ErrorCode::InvalidInput,
+                format!("manifest world for node '{}' must not be empty", node_name),
+            ));
         }
     }
 

@@ -257,33 +257,33 @@ pub fn validate_pack_manifest_core(manifest: &PackManifest) -> Vec<Diagnostic> {
 
     for component in &manifest.components {
         if let Some(configurators) = &component.configurators {
-            if let Some(flow_id) = &configurators.basic {
-                if !flow_ids.contains(flow_id) {
-                    diagnostics.push(core_diagnostic(
-                        Severity::Error,
-                        "PACK_COMPONENT_CONFIG_FLOW_MISSING",
-                        "Component configurator flow is not present in the pack manifest.",
-                        Some(format!(
-                            "components.{}.configurators.basic",
-                            component.id.as_str()
-                        )),
-                        Some("Add the referenced flow to the pack manifest flows.".to_owned()),
-                    ));
-                }
+            if let Some(flow_id) = &configurators.basic
+                && !flow_ids.contains(flow_id)
+            {
+                diagnostics.push(core_diagnostic(
+                    Severity::Error,
+                    "PACK_COMPONENT_CONFIG_FLOW_MISSING",
+                    "Component configurator flow is not present in the pack manifest.",
+                    Some(format!(
+                        "components.{}.configurators.basic",
+                        component.id.as_str()
+                    )),
+                    Some("Add the referenced flow to the pack manifest flows.".to_owned()),
+                ));
             }
-            if let Some(flow_id) = &configurators.full {
-                if !flow_ids.contains(flow_id) {
-                    diagnostics.push(core_diagnostic(
-                        Severity::Error,
-                        "PACK_COMPONENT_CONFIG_FLOW_MISSING",
-                        "Component configurator flow is not present in the pack manifest.",
-                        Some(format!(
-                            "components.{}.configurators.full",
-                            component.id.as_str()
-                        )),
-                        Some("Add the referenced flow to the pack manifest flows.".to_owned()),
-                    ));
-                }
+            if let Some(flow_id) = &configurators.full
+                && !flow_ids.contains(flow_id)
+            {
+                diagnostics.push(core_diagnostic(
+                    Severity::Error,
+                    "PACK_COMPONENT_CONFIG_FLOW_MISSING",
+                    "Component configurator flow is not present in the pack manifest.",
+                    Some(format!(
+                        "components.{}.configurators.full",
+                        component.id.as_str()
+                    )),
+                    Some("Add the referenced flow to the pack manifest flows.".to_owned()),
+                ));
             }
         }
     }
@@ -353,17 +353,15 @@ fn declared_component_keys(manifest: &PackManifest) -> HashSet<String> {
 
     #[cfg(feature = "serde")]
     {
-        if let Some(extensions) = manifest.extensions.as_ref() {
-            if let Some(extension) = extensions.get(EXT_COMPONENT_SOURCES_V1) {
-                if let Some(ExtensionInline::Other(value)) = extension.inline.as_ref() {
-                    if let Ok(payload) = ComponentSourcesV1::from_extension_value(value) {
-                        for entry in payload.components {
-                            declared.insert(entry.name);
-                            if let Some(component_id) = entry.component_id {
-                                declared.insert(component_id.as_str().to_owned());
-                            }
-                        }
-                    }
+        if let Some(extensions) = manifest.extensions.as_ref()
+            && let Some(extension) = extensions.get(EXT_COMPONENT_SOURCES_V1)
+            && let Some(ExtensionInline::Other(value)) = extension.inline.as_ref()
+            && let Ok(payload) = ComponentSourcesV1::from_extension_value(value)
+        {
+            for entry in payload.components {
+                declared.insert(entry.name);
+                if let Some(component_id) = entry.component_id {
+                    declared.insert(component_id.as_str().to_owned());
                 }
             }
         }

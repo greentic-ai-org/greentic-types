@@ -11,7 +11,7 @@ Every repository in the `greentic-ng` stack depends on these types to exchange t
 - **`telemetry-autoinit`** – bundles the OTLP stack and task-local span helpers.
 - **`uuid`** – adds UUID-based constructors for `SessionKey`.
 
-MSRV: **Rust 1.85** (required by the 2024 edition). The MSRV is enforced in CI; when bumping it, update both `Cargo.toml` and the workflow matrix.
+MSRV: **Rust 1.90** (required by the 2024 edition). The MSRV is enforced in CI; when bumping it, update both `Cargo.toml` and the workflow matrix.
 
 Disable defaults for fully `no_std` builds:
 ```toml
@@ -101,6 +101,8 @@ let outcome = match validate("payload") {
 ## WIT + CBOR evolution
 The WIT ABI stays stable; CBOR schemas evolve via schema IDs and versions. The `SCHEMAS` registry
 and canonical CBOR fixtures enforce lockstep so encode/decode stays deterministic across releases.
+Component tooling should treat `describe()` as authoritative; if `component-schema.*` endpoints are
+present, they must return SchemaIR that matches the embedded schemas after canonicalization.
 
 ### Worker envelope
 - `WorkerRequest`, `WorkerResponse`, and `WorkerMessage` are the shared worker envelope models, mirroring the `greentic:worker@1.0.0` WIT package.

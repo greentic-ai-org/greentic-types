@@ -176,12 +176,12 @@ fn split_oci_reference(reference: &str) -> OciReferenceParts<'_> {
 fn split_oci_tag(reference: &str) -> (&str, Option<&str>) {
     let last_slash = reference.rfind('/');
     let last_colon = reference.rfind(':');
-    if let Some(colon) = last_colon {
-        if last_slash.is_none_or(|slash| colon > slash) {
-            let tag = &reference[colon + 1..];
-            if !tag.is_empty() {
-                return (&reference[..colon], Some(tag));
-            }
+    if let Some(colon) = last_colon
+        && last_slash.is_none_or(|slash| colon > slash)
+    {
+        let tag = &reference[colon + 1..];
+        if !tag.is_empty() {
+            return (&reference[..colon], Some(tag));
         }
     }
     (reference, None)

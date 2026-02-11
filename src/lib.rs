@@ -66,6 +66,7 @@ pub mod cbor;
 pub mod cbor_bytes;
 pub mod component;
 pub mod component_source;
+pub mod contracts;
 pub mod deployment;
 pub mod distributor;
 pub mod envelope;
@@ -212,9 +213,10 @@ pub use schema_id::{IoSchemaSource, QaSchemaSource, SchemaId, SchemaSource, sche
 pub use schema_registry::{SCHEMAS, SchemaDef};
 pub use schemas::component::v0_5_0::LegacyComponentQaSpec;
 pub use schemas::component::v0_6_0::{
-    ComponentDescribe, ComponentInfo, ComponentQaSpec, ComponentRunInput, ComponentRunOutput,
-    QaMode as ComponentQaMode, Question as ComponentQuestion,
-    QuestionKind as ComponentQuestionKind,
+    ComponentDescribe, ComponentInfo, ComponentOperation as ComponentDescribeOperation,
+    ComponentQaSpec, ComponentRunInput, ComponentRunOutput, QaMode as ComponentQaMode,
+    Question as ComponentQuestion, QuestionKind as ComponentQuestionKind,
+    RedactionKind as ComponentRedactionKind, RedactionRule as ComponentRedactionRule,
 };
 pub use schemas::pack::v0_6_0::{
     CapabilityDescriptor, CapabilityMetadata, PackDescribe, PackInfo, PackQaSpec,
@@ -1030,7 +1032,7 @@ fn validate_hex(hex: &str) -> GResult<()> {
             "digest hex payload must not be empty",
         ));
     }
-    if hex.len() % 2 != 0 {
+    if !hex.len().is_multiple_of(2) {
         return Err(GreenticError::new(
             ErrorCode::InvalidInput,
             "digest hex payload must have an even number of digits",

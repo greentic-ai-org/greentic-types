@@ -36,7 +36,22 @@ pub const SCHEMAS: &[SchemaDef] = &[
         kind: "component",
     },
     SchemaDef {
+        id: "greentic.component.schema@0.6.0",
+        version: 6,
+        kind: "component",
+    },
+    SchemaDef {
+        id: "greentic.component.info@0.6.0",
+        version: 6,
+        kind: "component",
+    },
+    SchemaDef {
         id: "greentic.component.qa@0.6.0",
+        version: 6,
+        kind: "component",
+    },
+    SchemaDef {
+        id: "greentic.component.config@0.6.0",
         version: 6,
         kind: "component",
     },

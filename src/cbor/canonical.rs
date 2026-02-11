@@ -43,6 +43,13 @@ pub fn to_canonical_cbor<T: Serialize>(value: &T) -> Result<Vec<u8>> {
     canonicalize(&interim)
 }
 
+/// Encode a value as canonical CBOR bytes, allowing floats.
+pub fn to_canonical_cbor_allow_floats<T: Serialize>(value: &T) -> Result<Vec<u8>> {
+    let mut interim = Vec::new();
+    into_writer(value, &mut interim).map_err(|err| CanonicalError::Encode(err.to_string()))?;
+    canonicalize_allow_floats(&interim)
+}
+
 /// Deserialize CBOR ignoring canonical constraints.
 pub fn from_cbor<T: DeserializeOwned>(bytes: &[u8]) -> Result<T> {
     from_reader(bytes).map_err(|err| CanonicalError::Decode(err.to_string()))
@@ -61,6 +68,15 @@ pub fn ensure_canonical(bytes: &[u8]) -> Result<()> {
 pub fn canonicalize(bytes: &[u8]) -> Result<Vec<u8>> {
     let value: Value = from_reader(bytes).map_err(|err| CanonicalError::Decode(err.to_string()))?;
     let canonical = canonicalize_value(value)?;
+    let mut buf = Vec::new();
+    into_writer(&canonical, &mut buf).map_err(|err| CanonicalError::Encode(err.to_string()))?;
+    Ok(buf)
+}
+
+/// Parse CBOR and re-encode in canonical form, allowing floats.
+pub fn canonicalize_allow_floats(bytes: &[u8]) -> Result<Vec<u8>> {
+    let value: Value = from_reader(bytes).map_err(|err| CanonicalError::Decode(err.to_string()))?;
+    let canonical = canonicalize_value_allow_floats(value)?;
     let mut buf = Vec::new();
     into_writer(&canonical, &mut buf).map_err(|err| CanonicalError::Encode(err.to_string()))?;
     Ok(buf)
@@ -94,6 +110,41 @@ fn canonicalize_value(value: Value) -> Result<Value> {
             Ok(Value::Map(canonical_entries))
         }
         Value::Float(_) => Err(CanonicalError::FloatNotAllowed),
+        Value::Tag(_, _) => Err(CanonicalError::TagNotAllowed),
+        _ => Err(CanonicalError::TagNotAllowed),
+    }
+}
+
+fn canonicalize_value_allow_floats(value: Value) -> Result<Value> {
+    match value {
+        Value::Integer(_)
+        | Value::Bytes(_)
+        | Value::Text(_)
+        | Value::Bool(_)
+        | Value::Null
+        | Value::Float(_) => Ok(value),
+        Value::Array(elements) => {
+            let canonical_elements = elements
+                .into_iter()
+                .map(canonicalize_value_allow_floats)
+                .collect::<Result<Vec<_>>>()?;
+            Ok(Value::Array(canonical_elements))
+        }
+        Value::Map(entries) => {
+            let mut canonical_entries = entries
+                .into_iter()
+                .map(|(key, val)| {
+                    let canonical_key = match key {
+                        Value::Text(text) => Value::Text(text),
+                        _ => return Err(CanonicalError::NonStringMapKey),
+                    };
+                    let canonical_val = canonicalize_value_allow_floats(val)?;
+                    Ok((canonical_key, canonical_val))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            canonical_entries.sort_unstable_by(|(a, _), (b, _)| compare_map_keys(a, b));
+            Ok(Value::Map(canonical_entries))
+        }
         Value::Tag(_, _) => Err(CanonicalError::TagNotAllowed),
         _ => Err(CanonicalError::TagNotAllowed),
     }
