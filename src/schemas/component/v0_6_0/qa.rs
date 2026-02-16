@@ -1,5 +1,6 @@
 //! Component QA schema (v0.6.0).
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
+use core::{fmt, str::FromStr};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -17,10 +18,43 @@ pub enum QaMode {
     Default,
     /// Setup mode.
     Setup,
-    /// Upgrade mode.
-    Upgrade,
+    /// Update mode.
+    #[cfg_attr(feature = "serde", serde(alias = "upgrade"))]
+    Update,
     /// Remove mode.
     Remove,
+}
+
+impl QaMode {
+    /// Canonical string form for this mode.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Default => "default",
+            Self::Setup => "setup",
+            Self::Update => "update",
+            Self::Remove => "remove",
+        }
+    }
+}
+
+impl fmt::Display for QaMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for QaMode {
+    type Err = &'static str;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
+            "default" => Ok(Self::Default),
+            "setup" => Ok(Self::Setup),
+            "update" | "upgrade" => Ok(Self::Update),
+            "remove" => Ok(Self::Remove),
+            _ => Err("invalid QA mode"),
+        }
+    }
 }
 
 /// QA spec for a component.
@@ -117,4 +151,50 @@ pub struct ChoiceOption {
     pub value: String,
     /// Label shown to the user.
     pub label: I18nText,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::QaMode;
+    use alloc::string::ToString;
+    use core::str::FromStr;
+
+    #[test]
+    fn from_str_accepts_upgrade_and_update() {
+        assert_eq!(QaMode::from_str("upgrade"), Ok(QaMode::Update));
+        assert_eq!(QaMode::from_str("update"), Ok(QaMode::Update));
+    }
+
+    #[test]
+    fn display_emits_update() {
+        assert_eq!(QaMode::Update.to_string(), "update");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_accepts_upgrade_and_emits_update_json() -> Result<(), Box<dyn std::error::Error>> {
+        let legacy: QaMode = serde_json::from_str("\"upgrade\"")?;
+        assert_eq!(legacy, QaMode::Update);
+
+        let canonical = serde_json::to_string(&QaMode::Update)?;
+        assert_eq!(canonical, "\"update\"");
+        Ok(())
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_accepts_upgrade_and_emits_update_cbor() -> Result<(), Box<dyn std::error::Error>> {
+        let mut legacy_bytes = Vec::new();
+        ciborium::ser::into_writer(
+            &ciborium::value::Value::Text("upgrade".into()),
+            &mut legacy_bytes,
+        )?;
+        let legacy = crate::CborBytes::new(legacy_bytes).decode::<QaMode>()?;
+        assert_eq!(legacy, QaMode::Update);
+
+        let canonical = crate::cbor::canonical::to_canonical_cbor(&QaMode::Update)?;
+        let value: ciborium::value::Value = ciborium::de::from_reader(canonical.as_slice())?;
+        assert_eq!(value, ciborium::value::Value::Text("update".into()));
+        Ok(())
+    }
 }

@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Renamed v0.6 QA lifecycle mode `upgrade` -> `update` for pack/component schemas; decode remains backward-compatible and accepts `upgrade` as a deprecated alias while canonical output now emits `update`. Added migration guidance in `MIGRATION.md`.
 - Replaced `ChannelMessageEnvelope::user_id` with `from: Option<Actor>` plus `to: Vec<Destination>` so senders/destinations are explicit; new `Actor`/`Destination` models and schema updates cover the change.
 - Added optional `bootstrap` hints to `PackManifest` (install/upgrade flows + installer component),
   keeping legacy manifests unchanged while enabling platform bootstrap routing; covered by
