@@ -1,0 +1,57 @@
+name: Dev Publish (latest-dev)
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch: {}
+
+jobs:
+  build-test:
+    name: CI (lint/test/build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Dynamic Patch Greentic Dependencies
+        run: |
+          pkg_name=$(grep '^name =' Cargo.toml | head -n 1 | cut -d'"' -f2)
+          deps=$(grep -oE 'greentic-[a-zA-Z0-9-]+' Cargo.toml | grep -v "$pkg_name" | sort -u || true)
+          if [ ! -z "$deps" ]; then
+            echo -e "\n[patch.crates-io]" >> Cargo.toml
+            for d in $deps; do
+              echo "$d = { git = 'https://github.com/greentic-ai/$d', branch = 'develop' }" >> Cargo.toml
+            done
+          fi
+
+      - uses: dtolnay/rust-toolchain@1.90.0
+        with:
+          toolchain: 1.90.0
+          override: true
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Lint & Test
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets -- -D warnings
+          # For types, we usually just build/test workspace
+          cargo build --workspace
+          cargo test --workspace
+
+  dev-release:
+    name: Update Rolling Dev Tag
+    needs: build-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Rolling Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag -d latest-dev || true
+          git push origin :refs/tags/latest-dev || true
+          git tag latest-dev
+          git push origin latest-dev
+          gh release delete latest-dev --yes || true
+          gh release create latest-dev --prerelease --title "Development Build (Rolling)" --notes "Rolling release for development branch."
