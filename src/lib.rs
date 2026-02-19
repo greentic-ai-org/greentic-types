@@ -211,6 +211,10 @@ pub use run::RunResult;
 pub use run::{NodeFailure, NodeStatus, NodeSummary, RunStatus, TranscriptOffset};
 pub use schema_id::{IoSchemaSource, QaSchemaSource, SchemaId, SchemaSource, schema_id_for_cbor};
 pub use schema_registry::{SCHEMAS, SchemaDef};
+#[deprecated(
+    since = "0.4.52",
+    note = "use schemas::component::v0_6_0::ComponentQaSpec"
+)]
 pub use schemas::component::v0_5_0::LegacyComponentQaSpec;
 pub use schemas::component::v0_6_0::{
     ComponentDescribe, ComponentInfo, ComponentOperation as ComponentDescribeOperation,
@@ -224,6 +228,7 @@ pub use schemas::pack::v0_6_0::{
 };
 pub use secrets::{SecretFormat, SecretKey, SecretRequirement, SecretScope};
 pub use session::canonical_session_key;
+#[allow(deprecated)]
 pub use session::{ReplyScope, SessionCursor, SessionData, SessionKey, WaitScope};
 pub use state::{StateKey, StatePath};
 pub use store::{
