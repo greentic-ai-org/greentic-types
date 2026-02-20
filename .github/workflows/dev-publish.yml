@@ -1,4 +1,4 @@
-name: Dev Publish crates
+name: Dev Publish crates (types)
 
 on:
   push:
@@ -41,8 +41,7 @@ jobs:
       - name: Cargo check (${{ matrix.profile.name }})
         run: cargo check --workspace ${{ matrix.profile.args }}
 
-  publish-dev:
-    name: Publish dev crates to crates.io
+  publish:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: [build-test, msrv]
     runs-on: ubuntu-latest
@@ -51,37 +50,28 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-
-      - name: Apply dev workspace version
+      - name: Setup GitVersion
+        uses: gittools/actions/gitversion/setup@v1
+        with:
+          versionSpec: "5.x"
+      - name: Determine dev version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v1
+        with:
+          useConfigFile: true
+          configFilePath: GitVersion.yml
+      - name: Set dev version for workspace crates
         shell: bash
         run: |
           set -euo pipefail
-          base_version=$(python3 - <<'PY'
-          import re
-          text = open('Cargo.toml', 'r', encoding='utf-8').read()
-          m = re.search(r'\[workspace\.package\][\s\S]*?^version\s*=\s*"([^"]+)"', text, re.M)
-          if not m:
-              raise SystemExit('workspace.package version not found')
-          print(m.group(1).split('-')[0])
-          PY
-          )
-          dev_version="${base_version}-dev.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
-          echo "Using ${dev_version}"
-
-          DEV_VERSION="$dev_version" python3 - <<'PY'
-          import os
-          import re
-          path = 'Cargo.toml'
-          text = open(path, 'r', encoding='utf-8').read()
-          pattern = r'(\[workspace\.package\][\s\S]*?^version\s*=\s*")([^"]+)(")'
-          new_text, count = re.subn(pattern, r'\g<1>' + os.environ['DEV_VERSION'] + r'\g<3>', text, count=1, flags=re.M)
-          if count != 1:
-              raise SystemExit('failed to update workspace.package version')
-          open(path, 'w', encoding='utf-8').write(new_text)
-          PY
-
+          dev_version="${{ steps.gitversion.outputs.MajorMinorPatch }}-${{ steps.gitversion.outputs.PreReleaseTag }}"
+          echo "Using dev version: ${dev_version}"
+          sed -i -E "0,/^version = \"[^\"]+\"/s//version = \"${dev_version}\"/" Cargo.toml
+          sed -i -E "s/(greentic-types-macros = \{[^}]*version = \")([^\"]+)(\"[^}]*\})/\1${dev_version}\3/" Cargo.toml
       - name: Publish changed crates
         uses: katyo/publish-crates@v2
         with:
