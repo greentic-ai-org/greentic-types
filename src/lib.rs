@@ -87,6 +87,7 @@ pub mod schema_id;
 pub mod schema_registry;
 pub mod store;
 pub mod supply_chain;
+pub mod wizard;
 pub mod worker;
 
 pub mod context;
@@ -259,6 +260,7 @@ pub use validate::{
     Diagnostic, PackValidator, Severity, ValidationCounts, ValidationReport,
     validate_pack_manifest_core,
 };
+pub use wizard::{WizardId, WizardMode, WizardPlan, WizardPlanMeta, WizardStep, WizardTarget};
 pub use worker::{WorkerMessage, WorkerRequest, WorkerResponse};
 
 #[cfg(feature = "schemars")]
