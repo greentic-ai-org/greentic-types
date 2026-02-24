@@ -45,6 +45,7 @@ fn capabilities_extension_set_get_roundtrip() {
         setup: Some(CapabilitySetupV1 {
             qa_ref: "qa/hooks/policy-setup.cbor".into(),
         }),
+        applies_to: None,
     }]);
 
     manifest
@@ -72,6 +73,7 @@ fn capabilities_extension_requires_setup_payload() {
         priority: 0,
         requires_setup: true,
         setup: None,
+        applies_to: None,
     }]);
 
     let err = payload.validate().expect_err("validation should fail");

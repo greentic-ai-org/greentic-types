@@ -103,6 +103,12 @@ pub struct CapabilityOfferV1 {
         serde(default, skip_serializing_if = "Option::is_none")
     )]
     pub setup: Option<CapabilitySetupV1>,
+    /// Optional hook applicability metadata.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub applies_to: Option<CapabilityHookAppliesToV1>,
 }
 
 /// Provider operation target for a capability offer.
@@ -145,6 +151,18 @@ pub struct CapabilityScopeV1 {
 pub struct CapabilitySetupV1 {
     /// Pack-relative QA spec reference.
     pub qa_ref: String,
+}
+
+/// Optional applicability constraints for hook capabilities.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct CapabilityHookAppliesToV1 {
+    /// Exact operation names (v1).
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Vec::is_empty")
+    )]
+    pub op_names: Vec<String>,
 }
 
 /// Errors produced while encoding/decoding capabilities extension payloads.

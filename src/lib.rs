@@ -178,7 +178,8 @@ pub use op_descriptor::{IoSchema, OpDescriptor, OpExample};
 pub use outcome::Outcome;
 pub use pack::extensions::capabilities::{
     CapabilitiesExtensionError, CapabilitiesExtensionV1, CapabilityOfferV1,
-    CapabilityProviderRefV1, CapabilityScopeV1, CapabilitySetupV1, EXT_CAPABILITIES_V1,
+    CapabilityHookAppliesToV1, CapabilityProviderRefV1, CapabilityScopeV1, CapabilitySetupV1,
+    EXT_CAPABILITIES_V1,
 };
 #[cfg(feature = "serde")]
 pub use pack::extensions::capabilities::{
