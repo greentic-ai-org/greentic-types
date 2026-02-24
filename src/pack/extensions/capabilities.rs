@@ -43,12 +43,12 @@ impl CapabilitiesExtensionV1 {
                     offer_id: offer.offer_id.clone(),
                 });
             }
-            if let Some(setup) = offer.setup.as_ref() {
-                if setup.qa_ref.trim().is_empty() {
-                    return Err(CapabilitiesExtensionError::InvalidSetupQaRef {
-                        offer_id: offer.offer_id.clone(),
-                    });
-                }
+            if let Some(setup) = offer.setup.as_ref()
+                && setup.qa_ref.trim().is_empty()
+            {
+                return Err(CapabilitiesExtensionError::InvalidSetupQaRef {
+                    offer_id: offer.offer_id.clone(),
+                });
             }
         }
         Ok(())
