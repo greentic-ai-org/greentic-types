@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use greentic_types::{
     CapabilitiesExtensionV1, CapabilityOfferV1, CapabilityProviderRefV1, CapabilitySetupV1,
-    ExtensionInline, ExtensionRef, EXT_CAPABILITIES_V1, PackId, PackKind, PackManifest,
+    EXT_CAPABILITIES_V1, ExtensionInline, ExtensionRef, PackId, PackKind, PackManifest,
     PackSignatures, ProviderExtensionInline,
 };
 use semver::Version;

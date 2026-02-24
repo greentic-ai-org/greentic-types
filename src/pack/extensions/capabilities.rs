@@ -195,8 +195,8 @@ pub fn encode_capabilities_extension_v1_to_cbor_bytes(
 pub fn decode_capabilities_extension_v1_from_cbor_bytes(
     bytes: &[u8],
 ) -> Result<CapabilitiesExtensionV1, CapabilitiesExtensionError> {
-    let decoded: CapabilitiesExtensionV1 =
-        from_reader(bytes).map_err(|err| CapabilitiesExtensionError::Deserialize(err.to_string()))?;
+    let decoded: CapabilitiesExtensionV1 = from_reader(bytes)
+        .map_err(|err| CapabilitiesExtensionError::Deserialize(err.to_string()))?;
     decoded.validate()?;
     Ok(decoded)
 }
